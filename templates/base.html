@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <nav>
+        {%for category in categories%}
+        <a href="/cat/{{category[0]}}">{{category[1]}}</a><br>
+        {%endfor%}
+    </nav>
+    <main>
+        {%for term in terms%}
+        {{term[1]}} {{term[2]}} {{term[4]}} {{term[5]}}<br>
+        {%endfor%}
+
+    </main>
+</body>
+</html>
