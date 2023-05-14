@@ -27,7 +27,7 @@ def render_category(CategoryId):
 
 @app.route('/')
 def render_home():
-    return redirect("/cat/0")
+    return render_template("home.html")
 
 """
 def logout():
