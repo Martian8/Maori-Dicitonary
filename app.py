@@ -14,20 +14,41 @@ def create_connection(sql):
         print(sqlite3.Error)
     return(None)
 
-@app.route("/cat/<CategoryId>")
-def render_category(CategoryId):
+def database_get(data_requests):
     db = create_connection(DB)
     cur = db.cursor()
-    query = "SELECT * FROM Categories"
-    categories = cur.execute(query).fetchall()
-    query = "SELECT * FROM MaoriDictionary WHERE CategoryId=?"
-    terms = cur.execute(query, (CategoryId, )).fetchall()
-    return render_template('base.html', categories=categories, terms=terms)
+    results = []
+    for data_request in data_requests:
+        if data_request[1]:
+            temp = cur.execute(data_request[0], data_request[1])
+        else:
+            temp = cur.execute(data_request[0])
+        if data_request[2]=="fetchone":
+            results.append(temp.fetchone())
+        else:
+            results.append(temp.fetchall())
+    db.close()
+    return results
+
+
+@app.route("/cat/<CategoryId>")
+def render_category(CategoryId):
+    categories, terms, term_detailed = database_get([["SELECT * FROM Categories", False, "fetchall"], ["SELECT * FROM MaoriDictionary WHERE CategoryId=?", (CategoryId, ), "fetchall"], ["SELECT * FROM MaoriDictionary WHERE Id=?", (0, ), "fetchone"]])
+    return render_template('home.html', categories=categories, terms=terms, term_detailed=term_detailed)
+
+@app.route("/term/<termId>")
+def render_term(termId):
+    categories, term_detailed = database_get([["SELECT * FROM Categories", False, "fetchall"], ["SELECT * FROM MaoriDictionary WHERE Id=?", (termId, ), "fetchone"]])
+    return render_template('home.html', categories=categories, term_detailed=term_detailed)
 
 
 @app.route('/')
 def render_home():
-    return render_template("home.html")
+    categories, term_detailed = database_get([["SELECT * FROM Categories", False, "fetchall"], ["SELECT * FROM MaoriDictionary WHERE Id=?", (0, ), "fetchone"]])
+    return render_template("home.html", categories=categories, term_detailed=term_detailed)
+
+
+
 
 """
 def logout():
