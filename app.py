@@ -6,270 +6,291 @@ app = Flask(__name__)
 DB = "dictionary.sqlite3"
 app.secret_key = "5als3bKd4Sasjf6969lrkvn"
 bcrypt = Bcrypt(app)
+#These are used to check which characters can be used for english/maori terms
+MAORI_CHARACTERS = ['q','w','e','r','t','y','u','i','o','p','a','s','d','f','g','h','j','k','l','z','x','c','v','b','n','m','Q','W','E','R','T','Y','U','I','O','P','A','S','D','F','G','H','J','K','L','Z','X','C','V','B','N','M','ā','ē','ī','ō','ū','Ā','Ē','Ī','Ō','Ū', "'", '-', ' ', '(', ')',',']
+ENGLISH_CHARACTERS = ['q','w','e','r','t','y','u','i','o','p','a','s','d','f','g','h','j','k','l','z','x','c','v','b','n','m','Q','W','E','R','T','Y','U','I','O','P','A','S','D','F','G','H','J','K','L','Z','X','C','V','B','N','M', "'", '-', ' ', '(', ')'',']
 
+#This function establishes a connection to the database
 def create_connection(sql):
     try:
         return sqlite3.connect(sql)
     except sqlite3.Error:
         print(sqlite3.Error)
-    return(None)
+    return (None)
 
-def database_get(data_requests):
+#All database interactions are compressed into this one function
+#The arguments inside each data request are: The query, the tuple (false if no tuple), and whether it should fetchone fetchall or commit
+def db_interact(data_requests):
     db = create_connection(DB)
     cur = db.cursor()
     results = []
+    # Allows for multiple database interactions just by calling the function once
     for data_request in data_requests:
+        # If there is an tuple input to sanitise or not
         if data_request[1]:
             temp = cur.execute(data_request[0], data_request[1])
         else:
             temp = cur.execute(data_request[0])
-        if data_request[2]=="fetchone":
+        # Fetch one or all, or commit (delete or add)
+        print(data_request)
+        if data_request[2] == "fetchone":
             results.append(temp.fetchone())
-        else:
+        elif data_request[2] == "fetchall":
             results.append(temp.fetchall())
+        elif data_request[2] == "commit":
+            db.commit()
+            print("commited")
     db.close()
     return results
 
-
-@app.route("/cat/<CategoryId>")
-def render_category(CategoryId):
-    categories, terms, term_detailed = database_get([["SELECT * FROM Categories", False, "fetchall"], ["SELECT * FROM MaoriDictionary WHERE CategoryId=?", (CategoryId, ), "fetchall"], ["SELECT * FROM MaoriDictionary WHERE Id=?", (0, ), "fetchone"]])
-    return render_template('home.html', categories=categories, terms=terms, term_detailed=term_detailed)
-
-@app.route("/term/<termId>")
-def render_term(termId):
-    categories, term_detailed = database_get([["SELECT * FROM Categories", False, "fetchall"], ["SELECT * FROM MaoriDictionary WHERE Id=?", (termId, ), "fetchone"]])
-    return render_template('home.html', categories=categories, term_detailed=term_detailed)
-
-
-@app.route('/')
-def render_home():
-    categories, term_detailed = database_get([["SELECT * FROM Categories", False, "fetchall"], ["SELECT * FROM MaoriDictionary WHERE Id=?", (0, ), "fetchone"]])
-    return render_template("home.html", categories=categories, term_detailed=term_detailed)
-
-
-
-
-"""
-def logout():
-    session.pop('username', None)
-    session.pop('display_name', None)
-
-
+#This stores the user information in the session so that they stay logged in when navigating different pages
 def get_user():
-    if ("email" in session) and ("display_name" in session):
+    if ("email" in session) and ("username" in session):
+        #This moves the data from the session into the webpage
         email = session["email"]
-        display_name = session["display_name"]
-        print(session)
+        display_name = session["username"]
+        permission = session["permission"]
         if email is None or display_name is None:
+            # if there is no user information, it returns the user as false (nonexistent)
             return False
-        return [display_name, email]
-    else:
-        print("oops")
+        return [display_name, email, permission]
+    # if there is no user information, it returns the user as false (nonexistent)
     return False
 
-def checkPasswordSecurity(password, password2):
-    if password != password2:
-        return "\signup?error=Passwords+do+not+match"
-    if len(password)<8:
-        return "\signup?error=Passwords+must+be+at+least+8+characters"
-    hasLetter = True in [i.isalpha() for i in password]
-    hasNumber = True in [i.isnumeric() for i in password]
-    hasSpecialChar = False in [i.isalnum() for i in password]
-    if hasLetter and hasNumber and hasSpecialChar:
-        return None
-    else:
-        return "\signup?error=Passwords+must+have+a+letter+a+number+and+a+special+character"
+#logs the user out by removing their information from the session
+def logout():
+    session.pop("username", None)
+    session.pop("email", None)
+    session.pop("permission", None)
 
+#This function checks the validity of various terms
+def validity(type, value):
+    match(type):
+        #A password should: 
+        case "password":
+            #Match with the confirm password variable
+            if value[0] != value[1]:
+                return "\signup?error=Passwords+do+not+match"
+            #Be at least 8 characters, 
+            if len(value[0]) < 8:
+                return "\signup?error=Passwords+must+be+at+least+8+characters"
+            #Have at least one letter, number, and special character
+            hasLetter = True in [i.isalpha() for i in value[0]]
+            hasNumber = True in [i.isnumeric() for i in value[0]]
+            hasSpecialChar = False in [i.isalnum() for i in value[0]]
+            if hasLetter and hasNumber and hasSpecialChar:
+                return None
+            else:
+                return "\signup?error=Passwords+must+have+a+letter+a+number+and+a+special+character"
+        #Word levels should be an integer between 1 and 10
+        case "level":
+            try:
+                if 1<=(int(value))<=10:
+                    return None
+            except:
+                0
+            return("\?error=Level+must+be+between+1+and+10")
+        #Maori words should only contain certain charcacers (Listed in the constant MAORI_CHARACTERS)
+        case "maori":
+            for char in value:
+                if char not in MAORI_CHARACTERS:
+                    return("\?error=Unaccepted+characters+used+in+the+maori+word")
+            return None
+        #English words should only contain certain charcacers (Listed in the constant ENGLISH_CHARACTERS)
+        case "english":
+            for char in value:
+                if char not in ENGLISH_CHARACTERS:
+                    return("\?error=Unaccepted+characters+used+in+the+english+word")
+            return None
+        #Usernames need to be between 3 and 20 characters long
+        case "username":
+            if len(value)>20 or len(value)<3:
+                return("\?error=Username+must+be+between+3+and+20+characters")
+            return None
 
-
-@app.route('/')
+#Renders the home page
+@app.route("/")
 def render_home():
-    print("home")
     user = get_user()
-    return render_template('home.html', user=user)
+    categories, terms, term_detailed = db_interact([["SELECT * FROM categories", False, "fetchall"], [
+                                                   "SELECT * FROM maori_dictionary", False, "fetchall"], ["SELECT * FROM maori_dictionary WHERE Id=?", (0, ), "fetchone"]])
+    return render_template("home.html", categories=categories, terms=terms, term_detailed=term_detailed, user=user)
 
-@app.route('/menu/<CategoryId>')
-def render_menu(CategoryId):
+#Renders the category page, where only words from a certain category are displayed
+@app.route("/cat/<category_id>")
+def render_category(category_id):
     user = get_user()
+    categories, terms, term_detailed = db_interact([["SELECT * FROM categories", False, "fetchall"], [
+                                                   "SELECT * FROM maori_dictionary WHERE category_id=?", (category_id, ), "fetchall"], ["SELECT * FROM maori_dictionary WHERE Id=?", (0, ), "fetchone"]])
+    return render_template("home.html", categories=categories, terms=terms, term_detailed=term_detailed, user=user)
 
-    db = create_connection(DB)
-    cur = db.cursor()
-    if CategoryId == "0":
-        menu = cur.execute(
-            "SELECT * FROM SmileMenu ORDER BY Name ASC").fetchall()
-    else:
-        menu = cur.execute(
-            "SELECT * FROM SmileMenu WHERE CategoryId=? ORDER BY Name ASC", (CategoryId)).fetchall()
-
-    categories = cur.execute("SELECT * FROM Category").fetchall()
-    return render_template('menu.html', menu=menu, categories = categories, user=user)
-
-@app.route("/menu")
-def render_cart():
+#Renders the term page, where detailed information about a certain term is displayed
+@app.route("/term/<termId>")
+def render_term(termId):
     user = get_user()
-    db = create_connection(DB)
-    cur = db.cursor()
-    cart = 2
+    categories, term_detailed = db_interact([["SELECT * FROM categories", False, "fetchall"], [
+                                            "SELECT * FROM maori_dictionary WHERE Id=?", (termId, ), "fetchone"]])
+    term_category,  = db_interact([["SELECT category_name FROM categories WHERE Id=?", (term_detailed[3], ), "fetchone"]])
+    return render_template("home.html", categories=categories,  term_category=term_category, term_detailed=term_detailed, user=user)
 
+#Renders the login page, where users can log in
+@app.route("/login", methods=["POST", "GET"])
+def render_login():
+    user = get_user()
+    categories,  = db_interact(
+        [["SELECT * FROM categories", False, "fetchall"]])
+    #This page is also used to log users out if they are logged in
+    if user:
+        logout()
+        return redirect("/")
+    #If they have submitted the form, the method is post, and this section logs them in
+    if request.method == "POST":
+        #Assigns to variable and formats the email and password
+        email = request.form["email"].lower().strip()
+        password = request.form["password"].strip()
+        #Gets the user data to check they submitted the right email and password and to get their other information
+        user_data,  = db_interact(
+            [["SELECT * FROM user WHERE email=?", (email, ), "fetchone"]])
+        #Checks they used the right email
+        try:
+            db_email = user_data[2]
+            db_username = user_data[1]
+            db_password = user_data[3]
+            db_permission = user_data[4]
+        except IndexError:
+            return redirect("\login?error=Email+or+password+incorrect")
+        #Checks they used the right password
+        if not bcrypt.check_password_hash(db_password, password):
+            return redirect("\login?error=Email+or+password+incorrect")
+        #Login successful, assigns the user information to the new values
+        session["email"] = db_email
+        session["username"] = db_username
+        session["permission"] = db_permission
+        return redirect("/")
+    #If they have not completed the form and are just trying to view the page, this renders it for them
+    return render_template("login.html", user=user, categories=categories)
+
+#Renders the signup page, where users can sign up
+@app.route("/signup", methods=["POST", "GET"])
+def render_signup():
+    user = get_user()
+    categories,  = db_interact(
+        [["SELECT * FROM categories", False, "fetchall"]])
+    #If they submitted the form
+    if request.method == "POST":
+        #Retrieves the data, and formats it correctly
+        username = request.form.get("username").title().strip()
+        email = request.form.get("email").lower().strip()
+        password = request.form.get("password")
+        password2 = request.form.get("password2")
+        is_teacher = request.form.get("is_teacher")
+        #Checks the validity of the password
+        passwordSecurity = validity("password", [password, password2])
+        if passwordSecurity != None:
+            return redirect(passwordSecurity)
+        #Checks the validity of the username
+        usernameValidity = validity("username", username)
+        if usernameValidity != None:
+            return redirect(usernameValidity)
+        #Hashes the password befor inserting it into the database
+        password = bcrypt.generate_password_hash(password)
+        try:
+            db_interact([["INSERT INTO user (username, email, password, is_teacher) VALUES(?,?,?, ?)",
+                        (username, email, password, is_teacher), "commit"]])
+        #Checks the email hasnt already been used
+        except sqlite3.IntegrityError:
+            return redirect("\signup?error=Email+has+already+been+used")
+        return redirect("login")
+    #Shows the page if they are just viewing, not submitting the form yet
+    return render_template("signup.html", user=user, categories=categories)
+
+#Handles all database editing. edit_type is add, update, or delete, cat_or_term says whether it is a category or a term
+@app.route("/edit/<edit_type>/<cat_or_term>/<Id>")
+def render_edit(edit_type, cat_or_term, Id):
+    user = get_user()
+    # Redirects away if they dont have editing permission or aren't logged in
+    if not user:
+        return redirect("\?You+dont+have+permission+to+edit")
+    if not user[2]:
+        return redirect("\?You+dont+have+permission+to+edit")
+    #If they are viewing the form to add or update a term, additional information needs to be retrieved from the database
+    if (edit_type == "add" or edit_type == "update") and (cat_or_term == "term"):
+        categories, terms, term_detailed = db_interact([["SELECT * FROM categories", False, "fetchall"], [
+                                                       "SELECT * FROM maori_dictionary ORDER BY maori ASC", False, "fetchall"], ["SELECT * FROM maori_dictionary WHERE Id=?", (Id, ), "fetchone"]])
+        #To help the auto complete when updating a term, this fetches the category name
+        if edit_type=="update":
+            term_category,  = db_interact([["SELECT category_name FROM categories WHERE Id=?", (term_detailed[3], ), "fetchone"]])
+            return render_template("edit.html", user=user, categories=categories, terms=terms, term_category=term_category, edit_type=edit_type, cat_or_term=cat_or_term, Id=Id, term_detailed=term_detailed)
+        return render_template("edit.html", user=user, categories=categories, terms=terms, edit_type=edit_type, cat_or_term=cat_or_term, Id=Id, term_detailed=term_detailed)
+    categories, terms = db_interact([["SELECT * FROM categories", False, "fetchall"], [
+                                    "SELECT * FROM maori_dictionary ORDER BY maori ASC", False, "fetchall"]])
+    return render_template("edit.html", user=user, categories=categories, terms=terms, edit_type=edit_type, cat_or_term=cat_or_term, Id=Id)
+
+#if they are submitting the form to edit the database it goes through here
+@app.route("/edit/<edit_type>/<cat_or_term>", methods=["POST"])
+def edit(edit_type, cat_or_term):
+    user = get_user()
+    # Redirects away if they dont have editing permission
+    if not user:
+        return redirect("\?You+dont+have+permission+to+edit")
+    if not user[2]:
+        return redirect("\?You+dont+have+permission+to+edit")
+    #Fetches the id, since that is used no matter what
+    Id = request.form.get("Id")
+    #If it's a category or term
+    match(cat_or_term):
+        case "cat":
+            match(edit_type):
+                #Adding a category
+                case "add":
+                    category_name = request.form.get("category_name")
+                    db_interact(
+                        [["INSERT INTO categories (category_name) VALUES (?)", (category_name, ), "commit"]])
+                case "update":
+                #Updating a category deletes it than readds it with the new name
+                    db_interact(
+                        [["DELETE FROM categories WHERE (Id) = ?", (Id, ), "commit"]])
+                    category_name = request.form.get("category_name")
+                    db_interact(
+                        [["INSERT INTO categories (Id,category_name) VALUES (?, ?)", (Id, category_name), "commit"]])
+                #Deleting a category also deletes all terms in the category
+                case "delete":
+                    db_interact([["DELETE FROM maori_dictionary WHERE (category_id) = ?", (Id, ), "commit"], [
+                                "DELETE FROM categories WHERE (Id) = ?", (Id, ), "commit"]])
+        case "term":
+            match(edit_type):
+                #If adding or updating a term this retrieves data, and checks validity
+                case "add" | "update":
+                    maori, english, category_id, definition, level, image = request.form.get("maori"), request.form.get(
+                        "english"), request.form.get("category_id"), request.form.get("definition"), request.form.get("level"), request.form.get("image")
+                    maoriValid, englishValid, levelValid = validity("maori", maori), validity("english", english), validity("level", level)
+                    if maoriValid is not None:
+                        return redirect(maoriValid)
+                    if englishValid is not None:
+                        return redirect(englishValid)
+                    if levelValid is not None:
+                        return redirect(levelValid)
+                #adds a term
+                case "add":
+                    db_interact([["INSERT INTO maori_dictionary (maori, english, category_id, definition, level, image) VALUES (?,?,?,?,?,?)", (maori, english, category_id, definition, level, image), "commit"]])
+                #updates a term by deleting then readding it with the new information
+                case "update":
+                    db_interact(
+                        [["DELETE FROM maori_dictionary WHERE (Id) = ?", (Id, ), "commit"]])
+                    db_interact([["INSERT INTO maori_dictionary (Id, maori, english, category_id, definition, level, image) VALUES (?,?,?,?,?,?,?)", (
+                       Id,maori, english, category_id, definition, level, image), "commit"]])
+                #deletes a term
+                case "delete":
+                    db_interact(
+                        [["DELETE FROM maori_dictionary WHERE (Id) = ?", (Id, ), "commit"]])
+    #Once the editing is finished, go back home
+    return redirect("/")
+
+#If the url wasn't recognised, this allows for quickly going back home.
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html"), 404
 
-@app.route('/admin')
-def render_admin():
-    user = get_user()
-    if not user:
-        return redirect('/?error=not+logged+in')
-    db = create_connection(DB)
-    cur = db.cursor()
-    categories = cur.execute("SELECT * FROM Category").fetchall()
-    menu = cur.execute('SELECT * FROM SmileMenu')
-    return render_template('admin.html', user=user, categories=categories, menu=menu)
-
-@app.route("/addCategory", methods=["POST"])
-def addCategory():
-    user = get_user()
-    if not user:
-        return redirect('/?error=not+logged+in')
-    cat_name = request.form.get("categoryName")
-    db = create_connection(DB)
-    query = "INSERT INTO Category ('name') VALUES (?)"
-    cur = db.cursor()
-    cur.execute(query, (cat_name, ))
-    db.commit()
-    db.close()
-    return redirect("/admin")
-
-
-@app.route("/deleteCategory", methods=["POST"])
-def deleteCategory():
-    user = get_user()
-    if not user:
-        return redirect('/?error=not+logged+in')
-    category = request.form.get("catId")
-    print(category)
-    category = category.split(", ")
-    catId, catName = category[0], category[1]
-    return render_template("/deleteConfirm.html", id=catId, name=catName, type="Category")
-
-@app.route("/deleteCategoryConfirm/<catId>")
-def deleteCategoryConfirm(catId):
-    user = get_user()
-    if not user:
-        return redirect('/?error=not+logged+in')
-    db = create_connection(DB)
-    query = "DELETE FROM Category WHERE Id = ?"
-    cur = db.cursor()
-    cur.execute(query, (catId, ))
-    db.commit()
-    db.close()
-    return redirect("/admin")
-
-
-@app.route("/addItem", methods=["POST"])
-def addItem():
-    user = get_user()
-    if not user:
-        return redirect('/?error=not+logged+in')
-    Name, Description, Size, Image, Price, Category = request.form.get("itemName"),request.form.get("itemDescription"),request.form.get("itemSize"),request.form.get("imageName"),request.form.get("itemPrice"),request.form.get("itemCategory")
-    db = create_connection(DB)
-    query = "INSERT INTO SmileMenu ('Name', 'Description', 'Size', 'Image', 'Price', 'CategoryId') VALUES (?,?,?,?,?,?)"
-    cur = db.cursor()
-    cur.execute(query, (Name, Description,Size, Image, Price, Category))
-    db.commit()
-    db.close()
-    return redirect("/admin")
-
-@app.route("/deleteItem", methods=["POST"])
-def deleteItem():
-    user = get_user()
-    if not user:
-        return redirect('/?error=not+logged+in')
-    item = request.form.get("item")
-    item = item.split(", ")
-    itemId, itemName = item[0], item[1]
-    return render_template("/deleteConfirm.html", id=itemId, name=itemName, type="Item")
-
-@app.route("/deleteItemConfirm/<itemId>")
-def deleteItemConfirm(itemId):
-    user = get_user()
-    if not user:
-        return redirect('/?error=not+logged+in')
-    db = create_connection(DB)
-    query = "DELETE FROM SmileMenu WHERE Id = ?"
-    cur = db.cursor()
-    cur.execute(query, (itemId, ))
-    db.commit()
-    db.close()
-    return redirect("/admin")
-
-
-@app.route('/contact')
-def render_contact():
-    user = get_user()
-    return render_template('contact.html', user=user)
-
-@app.route('/login', methods=['POST', 'GET'])
-def render_login():
-    user = get_user()
-    if user:
-        logout()
-        return redirect("/")
-    if request.method == 'POST':
-        email = request.form['email'].lower().strip()
-        password = request.form['password'].strip()
-        db = create_connection(DB)        
-        cur = db.cursor()
-        query = cur.execute("SELECT * FROM User WHERE email=?", (email,))
-        user_data = query.fetchone()
-        db.close()
-        print(user_data)
-        if user_data is None:
-            return redirect("\login?error=Email+or+password+incorrect")
-        try:    
-            db_email = user_data[3]
-            db_username = user_data[1]+user_data[2]
-            db_password = user_data[4]
-        except IndexError:
-            return redirect("\login?error=Email+or+password+incorrect")
-        if not bcrypt.check_password_hash(db_password, password):
-            return redirect("\login?error=Email+or+password+incorrect")
-        print("got here")
-        session['email'] = db_email
-        session['display_name']=db_username
-        return redirect('/')
-    return render_template("login.html", user=user)
-
-
-@app.route('/signup', methods=['POST', 'GET'])
-def render_signup():
-    user = get_user()
-    if request.method == 'POST':
-        print(request.form)
-        fname = request.form.get('fname').title().strip()
-        lname = request.form.get('lname').title().strip()
-        email = request.form.get('email').lower().strip()
-        password = request.form.get('password')
-        password2 = request.form.get('password2')
-        passwordSecurity = checkPasswordSecurity(password,password2)
-        if passwordSecurity!=None:
-            return redirect(passwordSecurity)
-        password = bcrypt.generate_password_hash(password)
-        db = create_connection(DB)
-        cur = db.cursor()
-        query = "INSERT INTO user (fname, lname, email, password) VALUES(?,?,?,?)"
-
-        try:
-            cur.execute(query, (fname, lname, email, password))
-        except sqlite3.IntegrityError:
-            cur.close()
-            return redirect("\signup?error=Email+has+already+been+used")
-        db.commit()
-        cur.close()
-        return redirect('login')
-    return render_template("signup.html", user=user)
-"""
-
-if __name__ == '__main__':
-    app.run(debug=True)
+#Runs the program
+if __name__ == "__main__":
+    app.run(port=6969, debug=True)

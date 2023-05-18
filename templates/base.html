@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link href="https://fonts.googleapis.com/css2?family=Comfortaa&family=Suez+One&display=swap" rel="stylesheet">
 	<title>{% block title %}{% endblock %}</title>
-	<meta name="Description" content="Author: D Benseman, Content: A dictionary to convert maori words to english.">
+	<meta name="Description" content="Author: A Vautier, Content: A dictionary to convert maori words to english.">
 </head>
 
 <body>
@@ -17,10 +17,20 @@
 		</header>
 
 		<nav>
+			{%if user%}
+			{{user[0]}}<br>
+			<a href="/login">logout</a><br>
+			{%else%}
+			<a href="/login">login</a><br>
+			{%endif%}
             <input type="checkbox" name="drop_down_menu" />
             {%for category in categories%}
-			<a href="/cat/{{category[0]}}">{{category[1]}}</a><br>
+			<a href="/cat/{{category[0]}}">{{category[1]}}</a>{%if user[2]%} - <a href="/edit/update/cat/{{category[0]}}">edit</a> <a href="/edit/delete/cat/{{category[0]}}">delete</a> {%endif%}
+			<br>
 			{%endfor%}
+			{%if user[2]%}
+			<a href="/edit/add/cat/0">add a category</a>
+			{%endif%}
 			<span></span>
 			<ul>    
                 <li><a href="\">Home</a></li>
@@ -38,16 +48,6 @@
             {% block main%}
 			
 			{% endblock main %}
-			{%for term in terms%}
-			<a href="/term/{{term[0]}}">{{term[1]}}</a><br>
-			{%endfor%}
-			{%if term_detailed%}
-			Term: {{term_detailed[1]}}<br>
-			Definition: {{term_detailed[2]}}<br>
-			{{categories[term_detailed[3]][1]}}<br>
-			{{term_detailed[4]}}<br>
-			{{term_detailed[5]}}<br>
-			{%endif%}
         </main>
 
 
@@ -56,7 +56,18 @@
 				&copy; AlexV 2020
 			</p>
 		</footer>
-
+        <script>
+				const confirmElements = document.querySelectorAll("[data-deleter]")
+				confirmElements.forEach((el) => el.addEventListener("click", confirmDelete(el.getAttribute("data-deleter"))))
+				function confirmDelete(message) {
+					return function (event) {
+					const confirmed = confirm(message)
+					if (!confirmed) {
+						ev.preventDefault()
+					}}
+				}
+			</script>
+	
 	</div>
 </body>
 </html>

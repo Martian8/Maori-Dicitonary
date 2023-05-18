@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Maōri Dictionary | Admin{% endblock %}
+
+{% block heading %}Maōri - English Dictionary{% endblock %}
+
+{% block main %}
+{%if cat_or_term=="term" and edit_type=="add"%}
+Add A Term
+<form class="myform" method="POST" action="/edit/add/term">
+    <div class="form-label">Maori:</div>
+    <div class="form-element"><input type="text" name = "maori" id = "maori" required></div>
+
+    <div class="form-label">English:</div>
+    <div class="form-element"><input type="text" name = "english" id = "english" required></div>
+
+    <div class="form-label">Category:</div>
+    <div class="form-element"><select id="category_id" name="category_id">
+        {%for category in categories%}
+        <option value = "{{category[0]}}"> {{category[1]}}</option>
+        {%endfor%}</select></div>
+
+    <div class="form-label">Definition:</div>
+    <div class="form-element"><input type="text" name = "definition" id = "definition"></div>
+
+    <div class="form-label">Level:</div>
+    <div class="form-element"><input type="text" name = "level" id = "level" required></div>
+    
+    <div class="form-label">Image Type (png, jpg, etc. Leave blank if no image):</div>
+    <div class="form-element"><input type="text" name = "image" id = "image" value="{{term_detailed[6]}}"></div>
+
+    <div class="form-label"></div>
+    <div class="form-element"><input type="submit" value = "Add"></div>
+</form>
+{%endif%}
+{%if cat_or_term=="term" and edit_type=="update"%}
+Update a Term
+<form class="myform" method="POST" action="/edit/update/term">
+    
+    <div class="form-label">Item to update:</div>
+    <div class="form-element"><select id="Id" name="Id" value="{{term_detailed[0]}}">
+        {%for term in terms%}
+        {%if Id|int==term[0]|int%}
+        <option value = "{{term[0]}}" selected> {{term[1]}}</option>
+        {%else%}
+        <option value = "{{term[0]}}"> {{term[1]}}</option>
+        {%endif%}
+        {%endfor%}</select></div>
+
+    <div class="form-label">Maori:</div>
+    <div class="form-element"><input type="text" name = "maori" id = "maori" value="{{term_detailed[1]}}" required></div>
+
+    <div class="form-label">English:</div>
+    <div class="form-element"><input type="text" name = "english" id = "english" value="{{term_detailed[2]}}" required></div>
+
+    <div class="form-label">Category:</div>
+    <div class="form-element"><select id="category_id" name="category_id" value="{{term_detailed[3]}}">
+        {%for category in categories%}
+        {%if term_detailed[3]|int==category[0]|int%}
+        <option value = "{{category[0]}}" selected> {{category[1]}}</option>
+        {%else%}
+        <option value = "{{category[0]}}"> {{category[1]}}</option>
+        {%endif%}
+        {%endfor%}</select></div>
+
+    <div class="form-label">Definition:</div>
+    <div class="form-element"><input type="text" name = "definition" id = "definition" value="{{term_detailed[4]}}"></div>
+
+    <div class="form-label">Level:</div>
+    <div class="form-element"><input type="text" name = "level" id = "level" value="{{term_detailed[5]}}" required></div>
+   
+    <div class="form-label">Image Type (png, jpg, etc. Leave blank if no image):</div>
+    <div class="form-element"><input type="text" name = "level" id = "level" value="{{term_detailed[6]}}" required></div>
+    
+    <div class="form-label"></div>
+    <div class="form-element"><input type="submit" value = "Update"></div>
+</form>
+{%endif%}
+{%if cat_or_term=="term" and edit_type=="delete"%}
+Delete a Term
+<form class="myform" method="POST" action="/edit/delete/term">
+    <div class="form-label">Term to delete:</div>
+    <div class="form-element"><select id="Id" name="Id" value="{{Id}}">
+        {%for term in terms%}
+        {%if Id|int==term[0]|int%}
+        <option value = "{{term[0]}}" selected> {{term[1]}}</option>
+        {%else%}
+        <option value = "{{term[0]}}"> {{term[1]}}</option>
+        {%endif%}
+        {%endfor%}</div>
+        <div class="form-label"></div>
+        <div class="form-element"><input type="submit" value = "Delete"></div>
+</form>
+{%endif%}
+{%if cat_or_term=="cat" and edit_type=="add"%}
+Add a Category
+<form class="myform" method="POST" action="/edit/add/cat">
+    <div class="form-label">Category Name:</div>
+    <div class="form-element"><input type="text" name = "category_name" id = "category_name" required></div>
+
+    <div class="form-label"></div>
+    <div class="form-element"><input type="submit" value = "Add"></div>
+</form>
+{%endif%}
+{%if cat_or_term=="cat" and edit_type=="update"%}
+Update a Category
+<form class="myform" method="POST" action="/edit/update/cat">
+    
+    <div class="form-label">Category to update:</div>
+    <div class="form-element"><select id="Id" name="Id">
+        {%for category in categories%}
+        {%if Id|int==category[0]|int%}
+        <option value = "{{category[0]}}" selected> {{category[1]}}</option>
+        {%else%}
+        <option value = "{{category[0]}}"> {{category[1]}}</option>
+        {%endif%}
+        {%endfor%}</select></div>
+
+    <div class="form-label">New Category Name:</div>
+    <div class="form-element"><input type="text" name = "category_name" id = "category_name" required></div>
+
+    <div class="form-label"></div>
+    <div class="form-element"><input type="submit" value = "Update"></div>
+</form>
+{%endif%}
+{%if cat_or_term=="cat" and edit_type=="delete"%}
+Delete a Category
+<form class="myform" method="POST" action="/edit/delete/cat" data-deleter="Are you sure? This will delete all items in this category as well!">
+    <div class="form-label">Category to delete:</div>
+    <div class="form-element"><select id="Id" name="Id" value="{{Id}}">
+        {%for category in categories%}
+        {%if Id|int==category[0]|int%}
+        <option value = "{{category[0]}}" selected> {{category[1]}}</option>
+        {%else%}
+        <option value = "{{category[0]}}"> {{category[1]}}</option>
+        {%endif%}
+        {%endfor%}</div>
+        <div class="form-label"></div></select>
+        <div class="form-element"><input type="submit" value = "Delete"></div>
+</form>
+{%endif%}
+{% endblock %}
