@@ -36,11 +36,10 @@ Add A Term
 {%if cat_or_term=="term" and edit_type=="update"%}
 Update a Term
 <form class="myform" method="POST" action="/edit/update/term">
-    
     <div class="form-label">Item to update:</div>
-    <div class="form-element"><select id="Id" name="Id" value="{{term_detailed[0]}}">
+    <div class="form-element"><select id="id" name="id" value="{{term_detailed[0]}}">
         {%for term in terms%}
-        {%if Id|int==term[0]|int%}
+        {%if id|int==term[0]|int%}
         <option value = "{{term[0]}}" selected> {{term[1]}}</option>
         {%else%}
         <option value = "{{term[0]}}"> {{term[1]}}</option>
@@ -80,9 +79,9 @@ Update a Term
 Delete a Term
 <form class="myform" method="POST" action="/edit/delete/term">
     <div class="form-label">Term to delete:</div>
-    <div class="form-element"><select id="Id" name="Id" value="{{Id}}">
+    <div class="form-element"><select id="id" name="id" value="{{id}}">
         {%for term in terms%}
-        {%if Id|int==term[0]|int%}
+        {%if id|int==term[0]|int%}
         <option value = "{{term[0]}}" selected> {{term[1]}}</option>
         {%else%}
         <option value = "{{term[0]}}"> {{term[1]}}</option>
@@ -107,9 +106,9 @@ Update a Category
 <form class="myform" method="POST" action="/edit/update/cat">
     
     <div class="form-label">Category to update:</div>
-    <div class="form-element"><select id="Id" name="Id">
+    <div class="form-element"><select id="id" name="id">
         {%for category in categories%}
-        {%if Id|int==category[0]|int%}
+        {%if id|int==category[0]|int%}
         <option value = "{{category[0]}}" selected> {{category[1]}}</option>
         {%else%}
         <option value = "{{category[0]}}"> {{category[1]}}</option>
@@ -127,9 +126,9 @@ Update a Category
 Delete a Category
 <form class="myform" method="POST" action="/edit/delete/cat" data-deleter="Are you sure? This will delete all items in this category as well!">
     <div class="form-label">Category to delete:</div>
-    <div class="form-element"><select id="Id" name="Id" value="{{Id}}">
+    <div class="form-element"><select id="id" name="id" value="{{id}}">
         {%for category in categories%}
-        {%if Id|int==category[0]|int%}
+        {%if id|int==category[0]|int%}
         <option value = "{{category[0]}}" selected> {{category[1]}}</option>
         {%else%}
         <option value = "{{category[0]}}"> {{category[1]}}</option>

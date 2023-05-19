@@ -15,7 +15,9 @@
 		<header>
 			<h1>{% block heading %}{% endblock %}</h1>
 		</header>
-
+		{%if error%}
+		<h1>{{error}}</h1>
+		{%endif%}
 		<nav>
 			{%if user%}
 			{{user[0]}}<br>
@@ -25,10 +27,10 @@
 			{%endif%}
             <input type="checkbox" name="drop_down_menu" />
             {%for category in categories%}
-			<a href="/cat/{{category[0]}}">{{category[1]}}</a>{%if user[2]%} - <a href="/edit/update/cat/{{category[0]}}">edit</a> <a href="/edit/delete/cat/{{category[0]}}">delete</a> {%endif%}
+			<a href="/cat/{{category[0]}}">{{category[1]}}</a>{%if user[1]%} - <a href="/edit/update/cat/{{category[0]}}">edit</a> <a href="/edit/delete/cat/{{category[0]}}">delete</a> {%endif%}
 			<br>
 			{%endfor%}
-			{%if user[2]%}
+			{%if user[1]%}
 			<a href="/edit/add/cat/0">add a category</a>
 			{%endif%}
 			<span></span>

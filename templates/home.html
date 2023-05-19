@@ -5,28 +5,16 @@
 {% block heading %}Maōri - English Dictionary{% endblock %}
 
 {% block main %}
-{%if user[2]%}
+{%if user[1]%}
 <a href="/edit/add/term/0">add a term</a>
 {%endif%}<br>
 
 {%for term in terms%}
 <a href="/term/{{term[0]}}">{{term[1]}}</a> || {{term[2]}}
-{%if user[2]%}
+{%if user[1]%}
 <a href="/edit/update/term/{{term[0]}}">edit</a>
 <a href="/edit/delete/term/{{term[0]}}">delete</a>
 {%endif%}<br>
 {%endfor%}
-{%if term_detailed%}
-Term: {{term_detailed[1]}}<br>
-Definition: {{term_detailed[2]}}<br>
-Category: {{term_category[0]}}<br>
-Meaning: {{term_detailed[4]}}<br>
-Level: {{term_detailed[5]}}<br>
-{%if term_detailed[6]%}
-<img src="/static/images/{{term_detailed[2]}}.{{term_detailed[6]}}">
-{%else%}
-<img src="/static/images/noimage.png">
-{%endif%}
-{%endif%}
 
 {% endblock %}
