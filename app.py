@@ -24,6 +24,7 @@ def create_connection(sql):
     return (None)
 
 # All database interactions are compressed into this one function
+# Doing this frees up the website functions to be easier to edit
 # The arguments inside each data request are: The query, the tuple (false if no tuple), and whether it should fetchone 
 # fetchall or commit
 def db_interact(data_requests):
@@ -45,8 +46,7 @@ def db_interact(data_requests):
             results.append(temp.fetchall())
         elif data_request[2] == "commit":
             db.commit()
-            print("commited")
-    # Closes the database
+        # Closes the database
     db.close()
     return results
 
@@ -82,10 +82,10 @@ def validity(type, value):
             if len(value[0]) < 8:
                 return "\signup?error=Passwords+must+be+at+least+8+characters"
             # Have at least one letter, number, and special character
-            hasLetter = True in [i.isalpha() for i in value[0]]
-            hasNumber = True in [i.isnumeric() for i in value[0]]
-            hasSpecialChar = False in [i.isalnum() for i in value[0]]
-            if hasLetter and hasNumber and hasSpecialChar:
+            has_letter = True in [i.isalpha() for i in value[0]]
+            has_number = True in [i.isnumeric() for i in value[0]]
+            has_special_char = False in [i.isalnum() for i in value[0]]
+            if has_letter and has_number and has_special_char:
                 return None
             else:
                 return "\signup?error=Passwords+must+have+a+letter+a+number+and+a+special+character"
@@ -111,17 +111,20 @@ def validity(type, value):
             return None
         # Usernames need to be between 3 and 20 characters long
         case "username":
+            print("."+value+".")
             if len(value)>20 or len(value)<3:
-                return("\?error=Username+must+be+between+3+and+20+characters")
+                return("\signup?error=Username+must+be+between+3+and+20+characters")
+            if value[0] == " " or value[-1] == " ":
+                return("\signup?error=The+first+and+last+character+cannot+be+a+space")
             return None
+            
 
 # Renders the home page
 @app.route("/")
 def render_home():
     user = get_user()
-    categories, terms, term_detailed = db_interact([["SELECT * FROM categories", False, "fetchall"], [
-                                                   "SELECT * FROM maori_dictionary", False, "fetchall"], 
-                                                   ["SELECT * FROM maori_dictionary WHERE id=?", (0, ), "fetchone"]])
+    categories, terms = db_interact([["SELECT * FROM categories", False, "fetchall"], [
+                                                   "SELECT * FROM maori_dictionary", False, "fetchall"]])
         #passes through any errors sent to the page
     error = request.args.get("error")
     return render_template("home.html", categories=categories, terms=terms, user=user, error=error)
@@ -229,9 +232,9 @@ def render_edit(edit_type, cat_or_term, id):
     user = get_user()
     # Redirects away if they dont have editing permission or aren't logged in
     if not user:
-        return redirect("\?You+dont+have+permission+to+edit")
+        return redirect("\?error=You+arent+logged+in")
     if not user[1]:
-        return redirect("\?You+dont+have+permission+to+edit")
+        return redirect("\?error=You+dont+have+permission+to+edit")
     # If they are viewing the form to add or update a term, additional information needs to 
     # be retrieved from the database
     if (edit_type == "add" or edit_type == "update") and (cat_or_term == "term"):
@@ -260,9 +263,9 @@ def edit(edit_type, cat_or_term):
     user = get_user()
     # Redirects away if they dont have editing permission
     if not user:
-        return redirect("\?You+dont+have+permission+to+edit")
+        return redirect("\?error=You+arent+logged+in")
     if not user[1]:
-        return redirect("\?You+dont+have+permission+to+edit")
+        return redirect("\?error=You+dont+have+permission+to+edit")
     # Fetches the id, since that is used no matter what
     id = request.form.get("id")
     # If it's a category or term
@@ -290,11 +293,11 @@ def edit(edit_type, cat_or_term):
             match(edit_type):
                 # If adding or updating a term this retrieves data, and checks validity
                 case "add" | "update":
-                    maori, english, category_id, definition, level, image = request.form.get("maori"), 
+                    maori, english, category_id, definition, level, image = (request.form.get("maori"), 
                     request.form.get("english"), request.form.get("category_id"), request.form.get("definition"), 
-                    request.form.get("level"), request.form.get("image")
-                    maoriValid, englishValid, levelValid = validity("maori", maori), validity("english", english), 
-                    validity("level", level)
+                    request.form.get("level"), request.form.get("image"))
+                    maoriValid, englishValid, levelValid = (validity("maori", maori), validity("english", english), 
+                    validity("level", level))
                     if maoriValid is not None:
                         return redirect(maoriValid)
                     if englishValid is not None:
@@ -309,7 +312,7 @@ def edit(edit_type, cat_or_term):
                     match(edit_type):
                         # adds a term
                         case "add":
-                            db_interact([["INSERT INTO maori_dictionary (maori, english, category_id, definition,"/
+                            db_interact([["INSERT INTO maori_dictionary (maori, english, category_id, definition,"+
                                           "level, image, last_edited, edited_by) VALUES (?,?,?,?,?,?,?,?)", 
                                           (maori, english, category_id, definition, level, image, now, editing_user), 
                                           "commit"]])
@@ -317,7 +320,7 @@ def edit(edit_type, cat_or_term):
                         case "update":
                             db_interact(
                                 [["DELETE FROM maori_dictionary WHERE (id) = ?", (id, ), "commit"]])
-                            db_interact([["INSERT INTO maori_dictionary (id, maori, english, category_id, definition,"/
+                            db_interact([["INSERT INTO maori_dictionary (id, maori, english, category_id, definition,"+
                                           "level,image,last_edited, edited_by) VALUES (?,?,?,?,?,?,?,?,?)", (
                             id,maori, english, category_id, definition, level, image, now, editing_user),"commit"]])
                 # deletes a term

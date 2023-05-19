@@ -6,15 +6,31 @@
 
 {% block main %}
 {%if user[1]%}
-<a href="/edit/add/term/0">add a term</a>
+<a href="/edit/add/term/0" class="add">add a term</a>
 {%endif%}<br>
+<table>
+    <thead>
+        <tr>
+            <th>Maori</th>
+            <th>English</th>
+            {%if user[1]%}
+            <th>Admin</th>
+            {%endif%}
 
-{%for term in terms%}
-<a href="/term/{{term[0]}}">{{term[1]}}</a> || {{term[2]}}
-{%if user[1]%}
-<a href="/edit/update/term/{{term[0]}}">edit</a>
-<a href="/edit/delete/term/{{term[0]}}">delete</a>
-{%endif%}<br>
-{%endfor%}
+        </tr>
+    </thead>
+    <tbody>
+        {%for term in terms%}
+        <tr>
+        <td><a href="/term/{{term[0]}}"> {{term[1]}} </a></td>
+        <td>{{term[2]}} </td>
+        {%if user[1]%}
+        <td> <a href="/edit/update/term/{{term[0]}}"> edit</a>  <a href="/edit/delete/term/{{term[0]}}">delete</a></td>
+        </tr>
+        {%endif%}
+        {%endfor%}    
+    </tbody>
+
+</table>
 
 {% endblock %}

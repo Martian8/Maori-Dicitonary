@@ -77,7 +77,7 @@ Update a Term
 {%endif%}
 {%if cat_or_term=="term" and edit_type=="delete"%}
 Delete a Term
-<form class="myform" method="POST" action="/edit/delete/term">
+<form class="myform" method="POST" action="/edit/delete/term"data-deleter="Are you sure?">
     <div class="form-label">Term to delete:</div>
     <div class="form-element"><select id="id" name="id" value="{{id}}">
         {%for term in terms%}

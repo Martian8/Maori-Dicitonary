@@ -6,13 +6,13 @@
 
 {% block main %}
 {%if user[1]%}
-<a href="/edit/add/term/0">add a term</a>
+<a href="/edit/add/term/0" class="add">add a term</a>
 {%endif%}<br>
 
 {%if term_detailed%}
-Term: {{term_detailed[1]}} <a href="/edit/update/term/{{term_detailed[0]}}">edit</a> 
+Term: {{term_detailed[1]}} 
 {%if user[1]%}
-<a href="/edit/delete/term/{{term_detailed[0]}}">delete</a><br>
+<a href="/edit/update/term/{{term_detailed[0]}}">edit</a> <a href="/edit/delete/term/{{term_detailed[0]}}">delete</a><br>
 {%endif%}
 Definition: {{term_detailed[2]}}<br>
 Category: {{term_category[0]}}<br>
@@ -23,7 +23,7 @@ Level: {{term_detailed[5]}}<br>
 {%else%}
 <img src="/static/images/noimage.png">
 {%endif%}
-Last edited by: {{editing_user[0]}} on {{term_detailed[7]}}
+Last edited{%if user[1]%} by: {{editing_user[0]}} {%endif%} on {{term_detailed[7]}}
 {%endif%}
 
 {% endblock %}

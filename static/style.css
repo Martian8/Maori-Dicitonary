@@ -1,0 +1,21 @@
+@media screen and (min-width:700px) {
+    .container{
+        display:flex;
+    }
+    
+}
+.container>*{
+    padding:15px;
+}
+
+*:not(h1){
+    font-size: 20px;
+}
+
+.add{
+    font-size: 25px;
+}
+
+nav{
+    border-right: 1px solid black;
+}
